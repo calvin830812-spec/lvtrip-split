@@ -146,11 +146,19 @@
 </div>
 
 <script>
-/* ===== 設定 ===== */
-const BUCKET = "Hq7ZwkGWVjM5NyjUx5krDz";   // kvdb.io 帳本（已建立）
-const KEY = "lvtrip";                       // 本次旅程
-const NAMES = ["Cherry","Cathy","Calvin","Lo"];
-const COLORS = ["#ef6f53","#0a7c8a","#ffb703","#7b5ea7"];
+/* ============================================================
+   ▼▼▼ 下次重複使用，只要改這 4 行 ▼▼▼
+   1. KEY    : 換一個新代碼（每趟旅程一個，資料才不會跟上次混在一起）
+   2. NAMES  : 改成這次的成員名單（幾個人都可以，2~N 人都行）
+   3. COLORS : 對應每個人的顏色（數量跟 NAMES 一樣）
+   4. BUCKET : 不用改！這是已驗證的 kvdb 帳本，新 KEY 直接沿用即可
+   改完把整個檔推到 GitHub Pages（或改檔名另開一頁）就完成。
+   詳細步驟見同資料夾 README.md
+   ============================================================ */
+const BUCKET = "Hq7ZwkGWVjM5NyjUx5krDz";   // kvdb.io 帳本（已 email 驗證，可直接用）
+const KEY = "lvtrip";                       // ← 本趟代碼（換新旅程請改這裡）
+const NAMES = ["Cherry","Cathy","Calvin","Lo"];          // ← 成員名單
+const COLORS = ["#ef6f53","#0a7c8a","#ffb703","#7b5ea7"]; // ← 對應顏色（可加減）
 const URL = `https://kvdb.io/${BUCKET}/${KEY}`;
 const N = NAMES.length;
 
