@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0a7c8a">
+<title>綠島遊・分帳</title>
+<style>
+  :root{
+    --sea:#0a7c8a; --sea-d:#075863; --sea-l:#e6f5f7;
+    --sun:#ffb703; --coral:#ef6f53; --ink:#1c2b2e; --gray:#6b7c80;
+    --line:#dde7e8; --bg:#f4f8f8; --card:#fff; --good:#1f9d6b; --bad:#e0533d;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.5;padding-bottom:46px}
+  header{background:linear-gradient(135deg,var(--sea),var(--sea-d));color:#fff;
+    padding:18px 16px 24px;position:relative;overflow:hidden}
+  header h1{margin:0;font-size:21px;letter-spacing:1px;display:flex;align-items:center;gap:8px}
+  header .sub{font-size:12px;opacity:.88;margin-top:3px;display:flex;align-items:center;gap:6px}
+  header .wave{position:absolute;bottom:-1px;left:0;width:100%;display:block}
+  .wrap{max-width:560px;margin:0 auto;padding:0 14px}
+  .card{background:var(--card);border-radius:16px;padding:16px;margin:14px 0;
+    box-shadow:0 2px 12px rgba(10,124,138,.07)}
+  .card h2{margin:0 0 13px;font-size:15px;color:var(--sea-d);display:flex;align-items:center;gap:7px}
+  label{font-size:12px;color:var(--gray);display:block;margin-bottom:5px}
+  input,select{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:11px;
+    font-size:16px;background:#fbfdfd;color:var(--ink);outline:none;-webkit-appearance:none;appearance:none}
+  select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%230a7c8a' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
+  input:focus,select:focus{border-color:var(--sea)}
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:11px;font-size:15px;font-weight:600}
+  .btn{background:var(--sea);color:#fff;padding:14px;width:100%}
+  .btn:active{background:var(--sea-d)}
+  .btn-sun{background:var(--sun);color:#3a2c00}
+  .btn-ghost{background:var(--sea-l);color:var(--sea-d)}
+  .field-row{display:flex;gap:9px}
+  .field-row>div{flex:1}
+  .exp{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .exp:last-child{border-bottom:none}
+  .exp .av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+  .exp .info{flex:1;min-width:0}
+  .exp .info .it{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .exp .info .by{font-size:11px;color:var(--gray)}
+  .exp .amt{font-weight:700;color:var(--sea-d);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .exp .del{background:none;color:#c7ccce;font-size:22px;padding:0 4px;width:auto;line-height:1}
+  .exp .del:active{color:var(--bad)}
+  .empty{color:var(--gray);font-size:13px;text-align:center;padding:18px 0}
+  .total-box{background:linear-gradient(135deg,var(--sea-l),#f0faf9);border-radius:13px;padding:15px;text-align:center;margin-bottom:12px}
+  .total-box .big{font-size:32px;font-weight:800;color:var(--sea-d);font-variant-numeric:tabular-nums}
+  .total-box .lbl{font-size:12px;color:var(--gray);margin-top:2px}
+  .sum-line{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line);font-size:14px}
+  .sum-line:last-child{border-bottom:none}
+  .sum-line .who{display:flex;align-items:center;gap:8px}
+  .sum-line .av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+  .sum-line .paid{font-size:11px;color:var(--gray)}
+  .bal{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+  .pos{color:var(--good)} .neg{color:var(--bad)} .zero{color:var(--gray)}
+  .settle{display:flex;align-items:center;gap:9px;padding:13px;background:#fff8ec;
+    border:1.5px solid #ffe2ab;border-radius:13px;margin-top:10px;font-size:15px}
+  .settle .nm{font-weight:700}
+  .settle .arw{color:var(--sun);font-size:18px}
+  .settle .pay{margin-left:auto;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .settled-ok{text-align:center;color:var(--good);font-weight:600;padding:16px}
+  .bar{position:fixed;top:0;left:0;width:100%;background:var(--sun);color:#3a2c00;
+    text-align:center;font-size:13px;padding:9px;transform:translateY(-100%);transition:.3s;z-index:99;font-weight:600}
+  .bar.show{transform:translateY(0)}
+  .bar.err{background:var(--bad);color:#fff}
+  .syncdot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5)}
+  .syncdot.live{background:#7bffce;box-shadow:0 0 0 0 rgba(123,255,206,.6);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(123,255,206,.5)}70%{box-shadow:0 0 0 6px rgba(123,255,206,0)}100%{box-shadow:0 0 0 0 rgba(123,255,206,0)}}
+  .mini{font-size:11px;color:var(--gray);text-align:center;margin-top:18px;line-height:1.7}
+  .mini a{color:var(--sea)}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+
+<header>
+  <h1>🐢 綠島遊・分帳</h1>
+  <div class="sub"><span class="syncdot" id="dot"></span><span id="syncTxt">四人均分・即時匯總</span></div>
+  <svg class="wave" viewBox="0 0 560 18" preserveAspectRatio="none" height="14">
+    <path d="M0 10 Q70 0 140 10 T280 10 T420 10 T560 10 V18 H0 Z" fill="#f4f8f8"/>
+  </svg>
+</header>
+
+<div class="wrap">
+
+  <div class="card">
+    <h2>➕ 新增一筆花費</h2>
+    <label>誰付的錢</label>
+    <select id="payer"></select>
+    <div class="field-row" style="margin-top:11px">
+      <div>
+        <label>項目</label>
+        <input id="item" placeholder="例：船票、潛水、晚餐">
+      </div>
+      <div style="max-width:130px">
+        <label>金額 NT$</label>
+        <input id="amt" type="number" inputmode="decimal" placeholder="0" min="0">
+      </div>
+    </div>
+    <button class="btn" id="addBtn" style="margin-top:13px">加入這筆</button>
+  </div>
+
+  <div class="card">
+    <h2>🧾 全部花費 <span id="cnt" style="color:var(--gray);font-weight:400;font-size:13px"></span></h2>
+    <div id="list"></div>
+  </div>
+
+  <div class="card">
+    <h2>📊 結算總覽</h2>
+    <div class="total-box">
+      <div class="big" id="grandTotal">NT$0</div>
+      <div class="lbl">總花費　•　每人均分 <b id="perHead">NT$0</b></div>
+    </div>
+    <div id="summary"></div>
+  </div>
+
+  <div class="card">
+    <h2>💸 誰要付給誰</h2>
+    <div id="settle"></div>
+  </div>
+
+  <button class="btn btn-ghost" id="shareBtn" style="margin:4px 0">🔗 複製連結傳給大家</button>
+
+  <div class="mini">
+    四個人打開同一條連結就共用同一份帳本，金額自動匯總。<br>
+    資料存在雲端（kvdb.io），閒置一段時間後會自動清除。
+  </div>
+</div>
+
+<script>
+/* ===== 設定 ===== */
+const BUCKET = "Hq7ZwkGWVjM5NyjUx5krDz";   // kvdb.io 帳本（已建立）
+const KEY = "lvtrip";                       // 本次旅程
+const NAMES = ["Cherry","Cathy","Calvin","Lo"];
+const COLORS = ["#ef6f53","#0a7c8a","#ffb703","#7b5ea7"];
+const URL = `https://kvdb.io/${BUCKET}/${KEY}`;
+const N = NAMES.length;
+
+let expenses = [];        // [{id,payer,item,amount}]
+let pollTimer = null;
+let busy = false;
+
+const $ = s => document.querySelector(s);
+const fmt = n => "NT$" + Math.round(n).toLocaleString("en-US");
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const initial = i => NAMES[i].slice(0,2);
+
+function toast(msg, err){
+  const b=$("#bar"); b.textContent=msg; b.className="bar show"+(err?" err":"");
+  setTimeout(()=>b.className="bar"+(err?" err":""), err?3200:1700);
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+/* ===== 雲端 ===== */
+async function pull(){
+  try{
+    const r=await fetch(URL,{cache:"no-store"});
+    if(r.status===404){ expenses=[]; setLive(true); render(); return; }
+    if(!r.ok) throw 0;
+    const d=await r.json();
+    expenses=Array.isArray(d.expenses)?d.expenses:[];
+    setLive(true); render();
+  }catch(e){ setLive(false); }
+}
+async function push(){
+  const r=await fetch(URL,{method:"PUT",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({expenses, v:Date.now()})});
+  if(!r.ok){
+    const t=await r.text().catch(()=>"");
+    if(t.includes("not verified")) throw "NOTVERIFIED";
+    throw "PUTFAIL";
+  }
+}
+/* 讀-改-寫：先抓雲端最新，套用變更，再寫回，降低互相覆蓋 */
+async function mutate(applyFn){
+  if(busy){ return; }
+  busy=true;
+  try{
+    try{
+      const r=await fetch(URL,{cache:"no-store"});
+      if(r.ok){ const d=await r.json(); if(Array.isArray(d.expenses)) expenses=d.expenses; }
+    }catch(e){}
+    applyFn();
+    await push();
+    setLive(true); render();
+  }catch(e){
+    if(e==="NOTVERIFIED") toast("帳本尚未啟用：請點 Gmail 裡 kvdb 的啟用信", true);
+    else toast("⚠️ 儲存失敗，請檢查網路", true);
+    setLive(false);
+  }finally{ busy=false; }
+}
+function setLive(ok){
+  $("#dot").classList.toggle("live",ok);
+  $("#syncTxt").textContent = ok ? "已連線・即時同步" : "離線中…";
+}
+
+/* ===== 計算 ===== */
+function calc(){
+  const paid=Array(N).fill(0);
+  expenses.forEach(e=>{ if(e.payer>=0&&e.payer<N) paid[e.payer]+=(+e.amount||0); });
+  const total=paid.reduce((a,b)=>a+b,0);
+  const share=total/N;
+  const bal=paid.map(p=>p-share);
+  return {paid,total,share,bal};
+}
+function settlements(bal){
+  const cre=bal.map((v,i)=>({i,v:Math.round(v)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  const deb=bal.map((v,i)=>({i,v:-Math.round(v)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  const out=[]; let c=0,d=0;
+  while(c<cre.length&&d<deb.length){
+    const p=Math.min(cre[c].v,deb[d].v);
+    if(p>0) out.push({from:deb[d].i,to:cre[c].i,amt:p});
+    cre[c].v-=p; deb[d].v-=p;
+    if(cre[c].v===0)c++; if(deb[d].v===0)d++;
+  }
+  return out;
+}
+
+/* ===== 畫面 ===== */
+function render(){
+  const c=calc();
+  // 清單
+  const list=$("#list"); list.innerHTML="";
+  $("#cnt").textContent = expenses.length?`（${expenses.length} 筆）`:"";
+  if(!expenses.length){ list.innerHTML=`<div class="empty">還沒有花費，從上面新增第一筆吧 👆</div>`; }
+  expenses.slice().reverse().forEach(e=>{
+    const row=document.createElement("div"); row.className="exp";
+    row.innerHTML=`
+      <div class="av" style="background:${COLORS[e.payer]}">${esc(initial(e.payer))}</div>
+      <div class="info"><div class="it">${esc(e.item)}</div><div class="by">${esc(NAMES[e.payer])} 付</div></div>
+      <div class="amt">${fmt(e.amount)}</div>`;
+    const del=document.createElement("button"); del.className="del"; del.innerHTML="×";
+    del.onclick=()=>{ if(confirm(`刪除「${e.item}」${fmt(e.amount)}？`)) mutate(()=>{expenses=expenses.filter(x=>x.id!==e.id);}); };
+    row.appendChild(del); list.appendChild(row);
+  });
+  // 總覽
+  $("#grandTotal").textContent=fmt(c.total);
+  $("#perHead").textContent=fmt(c.share);
+  const sum=$("#summary"); sum.innerHTML="";
+  NAMES.forEach((nm,i)=>{
+    const b=Math.round(c.bal[i]);
+    const cls=b>0?"pos":b<0?"neg":"zero";
+    const txt=b>0?`應收回 ${fmt(b)}`:b<0?`應付出 ${fmt(-b)}`:"剛好";
+    const line=document.createElement("div"); line.className="sum-line";
+    line.innerHTML=`
+      <div class="who"><div class="av" style="background:${COLORS[i]}">${esc(initial(i))}</div>
+        <div><div>${esc(nm)}</div><div class="paid">付了 ${fmt(c.paid[i])}</div></div></div>
+      <div class="bal ${cls}">${txt}</div>`;
+    sum.appendChild(line);
+  });
+  // 結算
+  const st=$("#settle"); st.innerHTML="";
+  if(c.total===0){ st.innerHTML=`<div class="empty">還沒有任何花費</div>`; }
+  else{
+    const t=settlements(c.bal);
+    if(!t.length) st.innerHTML=`<div class="settled-ok">🎉 已經平了，不用互相轉帳！</div>`;
+    else t.forEach(x=>{
+      const d=document.createElement("div"); d.className="settle";
+      d.innerHTML=`
+        <div class="av" style="background:${COLORS[x.from]};width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700">${esc(initial(x.from))}</div>
+        <span class="nm">${esc(NAMES[x.from])}</span><span class="arw">→</span>
+        <span class="nm" style="color:var(--good)">${esc(NAMES[x.to])}</span>
+        <span class="pay">${fmt(x.amt)}</span>`;
+      st.appendChild(d);
+    });
+  }
+}
+
+/* ===== 互動 ===== */
+function buildPayer(){
+  const sel=$("#payer"); sel.innerHTML="";
+  NAMES.forEach((nm,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=nm; sel.appendChild(o); });
+  const last=localStorage.getItem("lv_lastpayer"); if(last!==null) sel.value=last;
+}
+$("#addBtn").onclick=()=>{
+  const payer=parseInt($("#payer").value);
+  const item=$("#item").value.trim();
+  const amt=parseFloat($("#amt").value);
+  if(!item){ toast("請輸入項目",true); return; }
+  if(!(amt>0)){ toast("請輸入正確金額",true); return; }
+  localStorage.setItem("lv_lastpayer",payer);
+  mutate(()=>{ expenses.push({id:uid(),payer,item:item.slice(0,30),amount:amt}); });
+  $("#item").value=""; $("#amt").value=""; $("#item").focus();
+  toast("✓ 已加入");
+};
+$("#amt").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#addBtn").click(); });
+$("#shareBtn").onclick=()=>{
+  const link=location.href.split("#")[0];
+  navigator.clipboard?.writeText(link).then(()=>toast("📋 連結已複製，傳給大家！")).catch(()=>prompt("複製連結：",link));
+};
+
+/* ===== 啟動 ===== */
+buildPayer(); render();
+pull();
+pollTimer=setInterval(()=>{ if(!busy) pull(); }, 4000);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) pull(); });
+</script>
+</body>
+</html>
