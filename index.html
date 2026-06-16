@@ -36,6 +36,15 @@
   .btn-ghost{background:var(--sea-l);color:var(--sea-d)}
   .field-row{display:flex;gap:9px}
   .field-row>div{flex:1}
+  .share-head{display:flex;align-items:center;justify-content:space-between;margin:14px 0 7px}
+  .share-head .ln{font-size:12px;color:var(--gray)}
+  .share-head .all{font-size:12px;color:var(--sea);font-weight:600;background:none;width:auto;padding:2px 4px}
+  .share-pick{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{flex:1;min-width:62px;padding:9px 4px;border-radius:11px;border:2px solid var(--line);background:#fbfdfd;
+    display:flex;align-items:center;justify-content:center;gap:5px;font-size:14px;font-weight:600;color:var(--gray);transition:.12s}
+  .chip .cav{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;opacity:.3}
+  .chip.on{border-color:var(--sea);background:var(--sea-l);color:var(--ink)}
+  .chip.on .cav{opacity:1}
   .exp{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
   .exp:last-child{border-bottom:none}
   .exp .av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
@@ -101,7 +110,12 @@
         <input id="amt" type="number" inputmode="decimal" placeholder="0" min="0">
       </div>
     </div>
-    <button class="btn" id="addBtn" style="margin-top:13px">加入這筆</button>
+    <div class="share-head">
+      <span class="ln">這筆要分給誰？（預設四人均分）</span>
+      <button class="all" id="allBtn" type="button">全選</button>
+    </div>
+    <div class="share-pick" id="sharePick"></div>
+    <button class="btn" id="addBtn" style="margin-top:14px">加入這筆</button>
   </div>
 
   <div class="card">
@@ -113,7 +127,7 @@
     <h2>📊 結算總覽</h2>
     <div class="total-box">
       <div class="big" id="grandTotal">NT$0</div>
-      <div class="lbl">總花費　•　每人均分 <b id="perHead">NT$0</b></div>
+      <div class="lbl">總花費　•　依各項分攤對象計算</div>
     </div>
     <div id="summary"></div>
   </div>
@@ -199,13 +213,21 @@ function setLive(ok){
 }
 
 /* ===== 計算 ===== */
+function sharersOf(e){
+  return (Array.isArray(e.sharers)&&e.sharers.length)
+    ? e.sharers.filter(i=>i>=0&&i<N) : [0,1,2,3];
+}
 function calc(){
-  const paid=Array(N).fill(0);
-  expenses.forEach(e=>{ if(e.payer>=0&&e.payer<N) paid[e.payer]+=(+e.amount||0); });
+  const paid=Array(N).fill(0), owe=Array(N).fill(0);
+  expenses.forEach(e=>{
+    const amt=+e.amount||0;
+    if(e.payer>=0&&e.payer<N) paid[e.payer]+=amt;
+    const sh=sharersOf(e); const per=amt/sh.length;
+    sh.forEach(s=>owe[s]+=per);
+  });
   const total=paid.reduce((a,b)=>a+b,0);
-  const share=total/N;
-  const bal=paid.map(p=>p-share);
-  return {paid,total,share,bal};
+  const bal=paid.map((p,i)=>p-owe[i]);   // >0 應收回, <0 應付出
+  return {paid,owe,total,bal};
 }
 function settlements(bal){
   const cre=bal.map((v,i)=>({i,v:Math.round(v)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
@@ -231,7 +253,7 @@ function render(){
     const row=document.createElement("div"); row.className="exp";
     row.innerHTML=`
       <div class="av" style="background:${COLORS[e.payer]}">${esc(initial(e.payer))}</div>
-      <div class="info"><div class="it">${esc(e.item)}</div><div class="by">${esc(NAMES[e.payer])} 付</div></div>
+      <div class="info"><div class="it">${esc(e.item)}</div><div class="by">${esc(NAMES[e.payer])} 付・${esc(shareLabel(e))}</div></div>
       <div class="amt">${fmt(e.amount)}</div>`;
     const del=document.createElement("button"); del.className="del"; del.innerHTML="×";
     del.onclick=()=>{ if(confirm(`刪除「${e.item}」${fmt(e.amount)}？`)) mutate(()=>{expenses=expenses.filter(x=>x.id!==e.id);}); };
@@ -239,7 +261,6 @@ function render(){
   });
   // 總覽
   $("#grandTotal").textContent=fmt(c.total);
-  $("#perHead").textContent=fmt(c.share);
   const sum=$("#summary"); sum.innerHTML="";
   NAMES.forEach((nm,i)=>{
     const b=Math.round(c.bal[i]);
@@ -248,7 +269,7 @@ function render(){
     const line=document.createElement("div"); line.className="sum-line";
     line.innerHTML=`
       <div class="who"><div class="av" style="background:${COLORS[i]}">${esc(initial(i))}</div>
-        <div><div>${esc(nm)}</div><div class="paid">付了 ${fmt(c.paid[i])}</div></div></div>
+        <div><div>${esc(nm)}</div><div class="paid">付了 ${fmt(c.paid[i])}　•　該攤 ${fmt(c.owe[i])}</div></div></div>
       <div class="bal ${cls}">${txt}</div>`;
     sum.appendChild(line);
   });
@@ -276,15 +297,37 @@ function buildPayer(){
   NAMES.forEach((nm,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=nm; sel.appendChild(o); });
   const last=localStorage.getItem("lv_lastpayer"); if(last!==null) sel.value=last;
 }
+
+/* 分攤對象勾選 */
+let pickSet=new Set([0,1,2,3]);
+function shareLabel(e){
+  const sh=sharersOf(e);
+  if(sh.length===N) return "四人均分";
+  return "只分給 "+sh.map(i=>NAMES[i]).join("、");
+}
+function buildSharers(){
+  const box=$("#sharePick"); box.innerHTML="";
+  NAMES.forEach((nm,i)=>{
+    const c=document.createElement("div");
+    c.className="chip"+(pickSet.has(i)?" on":"");
+    c.innerHTML=`<span class="cav" style="background:${COLORS[i]}">${esc(initial(i))}</span>${esc(nm)}`;
+    c.onclick=()=>{ pickSet.has(i)?pickSet.delete(i):pickSet.add(i); buildSharers(); };
+    box.appendChild(c);
+  });
+}
+$("#allBtn").onclick=()=>{ pickSet=new Set([0,1,2,3]); buildSharers(); };
 $("#addBtn").onclick=()=>{
   const payer=parseInt($("#payer").value);
   const item=$("#item").value.trim();
   const amt=parseFloat($("#amt").value);
+  const sh=[...pickSet].sort((a,b)=>a-b);
   if(!item){ toast("請輸入項目",true); return; }
   if(!(amt>0)){ toast("請輸入正確金額",true); return; }
+  if(!sh.length){ toast("至少要勾一個分攤對象",true); return; }
   localStorage.setItem("lv_lastpayer",payer);
-  mutate(()=>{ expenses.push({id:uid(),payer,item:item.slice(0,30),amount:amt}); });
+  mutate(()=>{ expenses.push({id:uid(),payer,item:item.slice(0,30),amount:amt,sharers:sh}); });
   $("#item").value=""; $("#amt").value=""; $("#item").focus();
+  pickSet=new Set([0,1,2,3]); buildSharers();   // 還原為全選
   toast("✓ 已加入");
 };
 $("#amt").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#addBtn").click(); });
@@ -294,7 +337,7 @@ $("#shareBtn").onclick=()=>{
 };
 
 /* ===== 啟動 ===== */
-buildPayer(); render();
+buildPayer(); buildSharers(); render();
 pull();
 pollTimer=setInterval(()=>{ if(!busy) pull(); }, 4000);
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) pull(); });
